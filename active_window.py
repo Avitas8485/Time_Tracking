@@ -9,6 +9,11 @@ import win32process
 
 class ActiveWindowTracker:
     def __init__(self):
+        """Initializes the ActiveWindowTracker class
+        Attributes:
+            current_window (tuple): (title, exe, pid, path) of the currently active window
+            start_time (float): time in seconds since epoch when the current window was activated
+            active_time (float): time in seconds since epoch when the current window was activated"""
         self.current_window = None
         self.start_time = time.time()
         self.active_time = 0
@@ -22,7 +27,9 @@ class ActiveWindowTracker:
             return "None"
         
     def track_active_window_time(self):
-        """Returns the title and active time of the currently active window"""
+        """Returns the title and active time of the currently active window
+        Returns:
+            tuple: (title, active_time)"""
         active_window = self.get_active_window_info()
         if active_window != self.current_window:
             if self.current_window is not None:
