@@ -3,7 +3,7 @@ import win32gui
 import psutil
 import win32process
 import sqlite3
-
+import win32api
 
 
 
@@ -14,6 +14,8 @@ class ActiveWindowTracker:
         self.program_name = None
         self.start_time = time.time()
         self.active_time = 0
+        self.idle_threshold = 60
+        
 
         self.conn = sqlite3.connect(db_name)
         self.create_table()
@@ -46,10 +48,28 @@ class ActiveWindowTracker:
         except:
             return "None", "None", "None", "None"
         
+
+    def get_idle_time(self):
+        """Returns the idle time in seconds"""
+        last_input = win32api.GetLastInputInfo()
+        curr_ticks = win32api.GetTickCount()
+        idle_time = (curr_ticks - last_input) / 1000.0
+        return idle_time
+    
+    def is_idle(self):
+        """Returns True if the user is idle, False otherwise"""
+        return self.get_idle_time() > self.idle_threshold
+
     def track_active_window_time(self):
         """Returns the title and active time of the currently active window
         Returns:
             tuple: (title, exe, pid, path, active_time, program_name)"""
+        if self.is_idle():
+            self.current_window = "idle", "idle", "idle", "idle"
+            self.start_time = time.time()
+            program_name = "idle"
+            time.sleep(5)
+            return self.current_window, self.active_time, self.program_name
         active_window = self.get_active_window_info()
         program_name = active_window[0].split(" - ")[-1] if " - " in active_window[0] else active_window[0]
         #for now, skip the whole thing if the program name is "" or "None"
