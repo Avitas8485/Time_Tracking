@@ -61,7 +61,7 @@ class ActiveWindowTracker:
                 print(f"{self.current_window[0]}, was active for {self.active_time:.2f} seconds")
             self.current_window = active_window
             self.start_time = time.time()
-        time.sleep(0.5)
+        time.sleep(1)
         return self.current_window, self.active_time, program_name
 
     def store_window_activity(self, title, exe, pid, path, active_time, program_name):
