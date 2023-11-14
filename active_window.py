@@ -71,27 +71,26 @@ class ActiveWindowTracker:
         if self.is_idle():
             self.current_window = "idle", "idle", "idle", "idle"
             self.start_time = time.time()
-            program_name = "idle"
+            self.program_name = "idle"
             time.sleep(5)
             return self.current_window, self.active_time, self.program_name
         
         active_window = self.get_active_window_info()
-        program_name = active_window[0].split(" - ")[-1] if " - " in active_window[0] else active_window[0]
-        
-        
-        if program_name == "" or program_name == "None":
-            return self.current_window, self.active_time, program_name
+        self.program_name = active_window[0].split(" - ")[-1] if " - " in active_window[0] else active_window[0]
         
         if active_window != self.current_window:
             # Window has changed
-            if self.current_window is not None:
+            # to prevent the database from storing explorer.exe as the active window
+            if active_window[0] == "" or active_window[0] == "None":
+                pass
+            if self.current_window is not None and self.current_window[0] != "":
                 self.active_time = time.time() - self.start_time
                 print(f"{self.current_window[0]}, was active for {self.active_time:.2f} seconds")
                 self.store_window_activity(*self.current_window, active_time=self.active_time, program_name=self.program_name)
             self.current_window = active_window
             self.start_time = time.time()
         time.sleep(1)
-        return self.current_window, self.active_time, program_name
+        return self.current_window, self.active_time, self.program_name
 
 
     def store_window_activity(self, title, exe, pid, path, active_time, program_name):
