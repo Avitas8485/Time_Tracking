@@ -4,7 +4,8 @@ import psutil
 import win32process
 import sqlite3
 import win32api
-
+import logging
+import datetime
 
 
 class ActiveWindowTracker:
@@ -43,8 +44,10 @@ class ActiveWindowTracker:
         """Returns the title, exe, pid, and path of the currently active window"""
         try:
             pid = win32process.GetWindowThreadProcessId(win32gui.GetForegroundWindow())
-            return win32gui.GetWindowText(win32gui.GetForegroundWindow()), psutil.Process(pid[-1]).name(), pid[-1], psutil.Process(pid[-1]).cwd()
-        except:
+            process = psutil.Process(pid[-1])
+            return win32gui.GetWindowText(win32gui.GetForegroundWindow()), process.name(), pid[-1], process.cwd()
+        except Exception as e:
+            logging.error(f"Error getting active window info: {e}")
             return "None", "None", "None", "None"
         
 
@@ -74,15 +77,17 @@ class ActiveWindowTracker:
         
         active_window = self.get_active_window_info()
         program_name = active_window[0].split(" - ")[-1] if " - " in active_window[0] else active_window[0]
-        #for now, skip the whole thing if the program name is "" or "None"
+        
         
         if program_name == "" or program_name == "None":
             return self.current_window, self.active_time, program_name
         
         if active_window != self.current_window:
+            # Window has changed
             if self.current_window is not None:
                 self.active_time = time.time() - self.start_time
                 print(f"{self.current_window[0]}, was active for {self.active_time:.2f} seconds")
+                self.store_window_activity(*self.current_window, active_time=self.active_time, program_name=self.program_name)
             self.current_window = active_window
             self.start_time = time.time()
         time.sleep(1)
@@ -95,7 +100,7 @@ class ActiveWindowTracker:
         cursor.execute("""
             INSERT INTO window_activity (title, exe, pid, path, start_time, active_time, program_name)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (title, exe, pid, path, self.start_time, active_time, program_name))
+            """, (title, exe, pid, path, time.time(), active_time, program_name))
         self.conn.commit()
 
 
@@ -109,12 +114,13 @@ def main():
     tracker = ActiveWindowTracker()
     try:
         while True:
-            active_window, program_name, active_time = tracker.track_active_window_time()
-            tracker.store_window_activity(*active_window, program_name, active_time)
+            tracker.track_active_window_time()
+            
     except KeyboardInterrupt:
         tracker.close_database_connection()
         print("Database connection closed")
         print("Program terminated")
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     main()
