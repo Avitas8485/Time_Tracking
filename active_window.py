@@ -32,7 +32,8 @@ class ActiveWindowTracker:
                 exe TEXT,
                 pid INTEGER,
                 path TEXT,
-                start_time REAL,
+                start_time TEXT,
+                start_date TEXT,
                 active_time REAL,
                 program_name TEXT
             )
@@ -63,6 +64,14 @@ class ActiveWindowTracker:
         """Returns True if the user is idle, False otherwise"""
         return self.get_idle_time() > self.idle_threshold
 
+    def store_window_activity(self, title, exe, pid, path, active_time, program_name, start_time, start_date):
+        """Store window activity in the database"""
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            INSERT INTO window_activity (title, exe, pid, path, start_time, start_date, active_time, program_name)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (title, exe, pid, path, start_time, start_date, active_time, program_name))
+        self.conn.commit()
 
     def track_active_window_time(self):
         """Returns the title and active time of the currently active window
@@ -86,21 +95,17 @@ class ActiveWindowTracker:
             if self.current_window is not None and self.current_window[0] != "":
                 self.active_time = time.time() - self.start_time
                 print(f"{self.current_window[0]}, was active for {self.active_time:.2f} seconds")
-                self.store_window_activity(*self.current_window, active_time=self.active_time, program_name=self.program_name)
+                self.active_time = round(self.active_time, 2)
+                start_time = datetime.datetime.now().strftime("%H:%M:%S")
+                start_date = datetime.datetime.now().strftime("%Y-%m-%d")
+                self.store_window_activity(*self.current_window, active_time=self.active_time, program_name=self.program_name, start_time=start_time, start_date=start_date)
             self.current_window = active_window
             self.start_time = time.time()
         time.sleep(1)
         return self.current_window, self.active_time, self.program_name
 
 
-    def store_window_activity(self, title, exe, pid, path, active_time, program_name):
-        """Store window activity in the database"""
-        cursor = self.conn.cursor()
-        cursor.execute("""
-            INSERT INTO window_activity (title, exe, pid, path, start_time, active_time, program_name)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (title, exe, pid, path, time.time(), active_time, program_name))
-        self.conn.commit()
+    
 
 
     def close_database_connection(self):
