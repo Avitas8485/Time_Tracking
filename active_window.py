@@ -78,14 +78,13 @@ class ActiveWindowTracker:
         Returns:
             tuple: (title, exe, pid, path, active_time, program_name)"""
         if self.is_idle():
-            self.current_window = "idle", "idle", "idle", "idle"
-            self.start_time = time.time()
+            # User is idle
+            active_window = ("idle", "idle", "idle", "idle")
             self.program_name = "idle"
-            time.sleep(5)
-            return self.current_window, self.active_time, self.program_name
-        
-        active_window = self.get_active_window_info()
-        self.program_name = active_window[0].split(" - ")[-1] if " - " in active_window[0] else active_window[0]
+        else:
+            # User is active
+            active_window = self.get_active_window_info()
+            self.program_name = active_window[0].split(" - ")[-1] if " - " in active_window[0] else active_window[0]
         
         if active_window != self.current_window:
             # Window has changed
