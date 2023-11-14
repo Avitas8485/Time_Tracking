@@ -7,6 +7,9 @@ import win32api
 import logging
 import datetime
 
+# Constants
+IDLE_THRESHOLD = 60 # seconds
+SLEEP_TIME = 1 # seconds
 
 class ActiveWindowTracker:
     def __init__(self, db_name="window_tracker.db"):
@@ -15,30 +18,41 @@ class ActiveWindowTracker:
         self.program_name = None
         self.start_time = time.time()
         self.active_time = 0
-        self.idle_threshold = 60
-        
-
-        self.conn = sqlite3.connect(db_name)
+        self.conn = None
+        self.connect_to_database(db_name)
         self.create_table()
         
+    def connect_to_database(self, db_name):
+        """Connects to the SQLite database"""
+        try:
+            self.conn = sqlite3.connect(db_name)
+            logging.info(f"Connected to database: {db_name}")
+        except Exception as e:
+            logging.error(f"Error connecting to database: {e}")
+            exit(1)
 
     def create_table(self):
         """Creates a table in the database to store the active window information"""
-        cursor = self.conn.cursor()
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS window_activity (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT,
-                exe TEXT,
-                pid INTEGER,
-                path TEXT,
-                start_time TEXT,
-                start_date TEXT,
-                active_time REAL,
-                program_name TEXT
-            )
-                       """)
-        self.conn.commit()
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS window_activity (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    title TEXT,
+                    exe TEXT,
+                    pid INTEGER,
+                    path TEXT,
+                    start_time TEXT,
+                    start_date TEXT,
+                    active_time REAL,
+                    program_name TEXT
+                )
+                           """)
+            self.conn.commit()
+            logging.info("Table created successfully")
+        except Exception as e:
+            logging.error(f"Error creating table: {e}")
+            exit(1)
                        
 
     def get_active_window_info(self):
@@ -62,16 +76,21 @@ class ActiveWindowTracker:
     
     def is_idle(self):
         """Returns True if the user is idle, False otherwise"""
-        return self.get_idle_time() > self.idle_threshold
+        return self.get_idle_time() > IDLE_THRESHOLD
 
     def store_window_activity(self, title, exe, pid, path, active_time, program_name, start_time, start_date):
         """Store window activity in the database"""
-        cursor = self.conn.cursor()
-        cursor.execute("""
-            INSERT INTO window_activity (title, exe, pid, path, start_time, start_date, active_time, program_name)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (title, exe, pid, path, start_time, start_date, active_time, program_name))
-        self.conn.commit()
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute("""
+                INSERT INTO window_activity (title, exe, pid, path, start_time, start_date, active_time, program_name)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (title, exe, pid, path, start_time, start_date, active_time, program_name))
+            self.conn.commit()
+            logging.info("Window activity stored successfully")
+        except Exception as e:
+            logging.error(f"Error storing window activity: {e}")
+            exit(1)
 
     def track_active_window_time(self):
         """Returns the title and active time of the currently active window
@@ -100,7 +119,7 @@ class ActiveWindowTracker:
                 self.store_window_activity(*self.current_window, active_time=self.active_time, program_name=self.program_name, start_time=start_time, start_date=start_date)
             self.current_window = active_window
             self.start_time = time.time()
-        time.sleep(1)
+        time.sleep(SLEEP_TIME)
         return self.current_window, self.active_time, self.program_name
 
 
@@ -109,7 +128,8 @@ class ActiveWindowTracker:
 
     def close_database_connection(self):
         """Closes the database connection"""
-        self.conn.close()
+        if self.conn:
+            self.conn.close()
 
 
 
