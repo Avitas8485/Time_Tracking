@@ -7,35 +7,37 @@ import win32api
 import logging
 import datetime
 
+
 # Constants
 IDLE_THRESHOLD = 60 # seconds
 SLEEP_TIME = 1 # seconds
 
 class ActiveWindowTracker:
+    """A program that tracks the active window and stores the information in a database"""
     def __init__(self, db_name="window_tracker.db"):
         """Initializes the ActiveWindowTracker class"""
         self.current_window = None
         self.program_name = None
         self.start_time = time.time()
         self.active_time = 0
-        self.conn = None
-        self.connect_to_database(db_name)
+        self.conn = self.connect_to_database(db_name)
         self.create_table()
         
     def connect_to_database(self, db_name):
         """Connects to the SQLite database"""
         try:
-            self.conn = sqlite3.connect(db_name)
+            conn = sqlite3.connect(db_name)
             logging.info(f"Connected to database: {db_name}")
+            return conn
         except Exception as e:
-            logging.error(f"Error connecting to database: {e}")
-            exit(1)
+            logging.exception(f"Error connecting to database: {e}")
+            raise
 
     def create_table(self):
         """Creates a table in the database to store the active window information"""
         try:
-            cursor = self.conn.cursor()
-            cursor.execute("""
+            with self.conn:
+                self.conn.execute("""
                 CREATE TABLE IF NOT EXISTS window_activity (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     title TEXT,
@@ -48,11 +50,10 @@ class ActiveWindowTracker:
                     program_name TEXT
                 )
                            """)
-            self.conn.commit()
             logging.info("Table created successfully")
         except Exception as e:
-            logging.error(f"Error creating table: {e}")
-            exit(1)
+            logging.exception(f"Error creating table: {e}")
+            raise
                        
 
     def get_active_window_info(self):
@@ -62,7 +63,7 @@ class ActiveWindowTracker:
             process = psutil.Process(pid[-1])
             return win32gui.GetWindowText(win32gui.GetForegroundWindow()), process.name(), pid[-1], process.cwd()
         except Exception as e:
-            logging.error(f"Error getting active window info: {e}")
+            logging.exception(f"Error getting active window info: {e}")
             return "None", "None", "None", "None"
         
 
@@ -89,8 +90,8 @@ class ActiveWindowTracker:
             self.conn.commit()
             logging.info("Window activity stored successfully")
         except Exception as e:
-            logging.error(f"Error storing window activity: {e}")
-            exit(1)
+            logging.exception(f"Error storing window activity: {e}")
+            raise
 
     def track_active_window_time(self):
         """Returns the title and active time of the currently active window
@@ -135,15 +136,10 @@ class ActiveWindowTracker:
 
 def main():
     tracker = ActiveWindowTracker()
-    try:
-        while True:
-            tracker.track_active_window_time()
-            
-    except KeyboardInterrupt:
-        tracker.close_database_connection()
-        print("Database connection closed")
-        print("Program terminated")
+    while True:
+        tracker.track_active_window_time()
+        time.sleep(SLEEP_TIME)
+    
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
     main()

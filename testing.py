@@ -25,7 +25,7 @@ class TestActiveWindowTracker(unittest.TestCase):
         self.assertIsNotNone(self.tracker.track_active_window_time())
 
     def test_store_window_activity(self):
-        self.tracker.store_window_activity("title", "exe", 123, "path", 1.23, "program_name")
+        self.tracker.store_window_activity("title", "exe", 123, "path", 1.23, "program_name", "start_date", "start_time")
         conn = sqlite3.connect("test.db")
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM window_activity")
