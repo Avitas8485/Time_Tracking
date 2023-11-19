@@ -75,9 +75,9 @@ class ActiveWindowTracker:
         return idle_time
     
     
-    def is_idle(self):
+    def is_idle(self, idle_threshold=IDLE_THRESHOLD):
         """Returns True if the user is idle, False otherwise"""
-        return self.get_idle_time() > IDLE_THRESHOLD
+        return self.get_idle_time() > idle_threshold
 
     def store_window_activity(self, title, exe, pid, path, active_time, program_name, start_time, start_date):
         """Store window activity in the database"""
