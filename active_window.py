@@ -14,7 +14,17 @@ SLEEP_TIME = 1 # seconds
 logging.basicConfig(filename="active_window.log", format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
 
 class ActiveWindowTracker:
-    """A program that tracks the active window and stores the information in a database"""
+    """A program that tracks the active window and stores the information in a database
+    The program will store the following information in the database:
+    - title: the title of the active window
+    - exe: the name of the executable of the active window
+    - pid: the process ID of the active window
+    - path: the path of the active window
+    - start_time: the time the active window started
+    - start_date: the date the active window started
+    - active_time: the amount of time the active window was active
+    - program_name: the name of the program of the active window
+    """
     def __init__(self, db_name="window_tracker.db"):
         """Initializes the ActiveWindowTracker class"""
         self.current_window = None
