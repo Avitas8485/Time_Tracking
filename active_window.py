@@ -11,6 +11,7 @@ import datetime
 # Constants
 IDLE_THRESHOLD = 60 # seconds
 SLEEP_TIME = 1 # seconds
+logging.basicConfig(filename="active_window.log", format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
 
 class ActiveWindowTracker:
     """A program that tracks the active window and stores the information in a database"""
@@ -22,6 +23,7 @@ class ActiveWindowTracker:
         self.active_time = 0
         self.conn = self.connect_to_database(db_name)
         self.create_table()
+        
         
     def connect_to_database(self, db_name):
         """Connects to the SQLite database"""
@@ -113,7 +115,7 @@ class ActiveWindowTracker:
                 pass
             if self.current_window is not None and self.current_window[0] != "":
                 self.active_time = time.time() - self.start_time
-                print(f"{self.current_window[0]}, was active for {self.active_time:.2f} seconds")
+                logging.info(f"{self.current_window[0]}, was active for {self.active_time:.2f} seconds")    
                 self.active_time = round(self.active_time, 2)
                 start_time = datetime.datetime.now().strftime("%H:%M:%S")
                 start_date = datetime.datetime.now().strftime("%Y-%m-%d")

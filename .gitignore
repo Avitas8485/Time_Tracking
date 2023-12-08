@@ -1,1 +1,14 @@
 /application_usage.log
+# Ignore compiled files
+/build/
+/dist/
+
+# Ignore logs
+*.log
+
+# Ignore db
+*.db
+
+# ignore spec files
+*.spec
+
